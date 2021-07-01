@@ -1,26 +1,27 @@
 <template>
-  <form >              
-        <div class="container">
-            <label for="uname"><b>Username</b></label>
-            <input type="text" placeholder="Enter Username" name="uname" v-model="email"  required>
+  <form class="form">              
+        <div class="form__container">
+            <div class="form__item">
+                <input class="form__input" type="text" placeholder="Email" name="uname" v-model="email"  required>
+                <input class="form__input" type="password" placeholder="Senha" v-model="password" name="psw" required>
+            </div>
         
-            <label for="psw"><b>Password</b></label>
-            <input type="password" placeholder="Enter Password" v-model="password" name="psw" required>
-        
-            <button type="submit" @click="logarEmailSenha()">Login</button>
-            <button type="submit" @click="logarGoogle()">Login com Google</button>
-        </div>
+            <button class="form__btn" type="submit" @click.stop.prevent="logarEmailSenha()">Entrar</button>
+            <button class="form__btn" @click.stop.prevent="logarGoogle()">Entrar com Google</button>
+            <p>Não está cadastrado?<router-link to="/home">Cadastre-se aqui.</router-link></p>
+
+    </div>
     </form>
 </template>
 
 <script lang="ts">
 import { ref } from 'vue'
+import store from '@/store'
+import router from '@/router/index'
 import firebase from "firebase/app";
 import "firebase/auth";
 export default{
     setup(){
-        
-        // Your web app's Firebase configuration
         var firebaseConfig = {
             apiKey: "AIzaSyDn0QGzakyqFWhysIsSdq4mauk2AyAaoXU",
             authDomain: "testelogin-7676b.firebaseapp.com",
@@ -29,71 +30,118 @@ export default{
             messagingSenderId: "263468731148",
             appId: "1:263468731148:web:a44bba2b01cf0061d49729"
         };
-        // Initialize Firebase
+
         const firebaseApp = firebase.apps && firebase.apps.length > 0 ? firebase.apps[0] : firebase.initializeApp(firebaseConfig)
-        const email = ref('email')
-        const password = ref('password')
+        
+        
+        const email = ref('')
+        const password = ref('')
+
+        if (firebase.auth().currentUser) {     
+            store.commit('setUser', {});    
+            firebase.auth().signOut();
+        }
+
+
         const logarEmailSenha = ()=>{
              if (firebase.auth().currentUser) {
-                firebase.auth().signOut();
+                router.push('/home');
             } else {
-                if (email.value.length < 5) {
+                var emailValue = email.value;
+                var passwordValue = password.value;
+                if (emailValue.length < 5) {
                     alert('Please enter an email address.');
                     return;
                 }
-                if (password.value.length < 8) {
+                if (passwordValue.length < 8) {
                     alert('Please enter a password with at least 8 characters.');
                     return;
                 }
-                firebaseApp.auth().createUserWithEmailAndPassword(email.value, password.value)
+                firebaseApp.auth().signInWithEmailAndPassword(emailValue, passwordValue)
                 .then((userCredential) => {
                     // Signed in
                     var user = userCredential.user;
-                    console.log(user)
-                    // ...
+                    store.commit('setUser', {
+                        display_name: user?.displayName,
+                        email: user?.email,
+                        uid: user?.uid
+                    });
+                    router.push('/home');
                 })
                 .catch((error) => {
                     var errorCode = error.code;
                     var errorMessage = error.message;
-                    console.log('erro: '+errorCode+' '+errorMessage)
-                    // ..
+                     if (errorCode === 'auth/wrong-password') {
+                        alert('Wrong password.');
+                    } else if(errorCode === 'auth/invalid-email'){
+                        alert('Please enter an email address.');
+                    }else if(errorCode === 'auth/user-not-found') {
+                        alert('Email doesnt exists. Please sign up and try again.');
+                    }else {
+                        alert(errorMessage);
+                    }
                 });
             }
         }
 
         const logarGoogle = ()=>{
-             if (!firebase.auth().currentUser) {
+            if (firebase.auth().currentUser) {
+                router.push('/home');
+            } else {
                 var provider = new firebase.auth.GoogleAuthProvider();
                 provider.addScope('profile');
                 provider.addScope('email');
                 firebaseApp.auth()
                 .signInWithPopup(provider)
                 .then((result) => {
-                    var credential = result.credential as firebase.auth.OAuthCredential;
-
-                    // This gives you a Google Access Token. You can use it to access the Google API.
-                    var token = credential.accessToken;
-                    // The signed-in user info.
                     var user = result.user;
-                    console.log(''+token + ' '+user?.displayName);
-                    // ...
+                    store.commit('setUser', {
+                        display_name: user?.displayName,
+                        email: user?.email,
+                        uid: user?.uid
+                    });
+                    router.push('/home');
                 }).catch((error) => {
-                    // Handle Errors here.
                     var errorCode = error.code;
                     var errorMessage = error.message;
-                    // The email of the user's account used.
                     var email = error.email;
-                    // The firebase.auth.AuthCredential type that was used.
                     var credential = error.credential;
                     console.log(''+errorCode + ' '+errorMessage+' '+email+' '+credential);
-                    // ...
                 });
             }
         }
+        if (firebase.auth().currentUser) {
+            router.push('/home');
+        }
+        
         return {email, password, firebaseApp, logarEmailSenha, logarGoogle}
+    },
+    
+    mounted() {
+        console.log(store.getters.getUser)
     },
     name:'LoginForm',
 
 }
 </script>
 
+<style lang="scss">
+.form{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+
+    &__container{
+        width: 50%;
+        padding: 20% 0;
+        margin: auto;
+        max-height: 100%;  
+    }
+
+    &__input{
+        display: block;
+        margin: auto;
+    }
+}
+</style>

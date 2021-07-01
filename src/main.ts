@@ -5,10 +5,6 @@ import store from './store'
 import firebase from "firebase/app";
 import "firebase/auth";
 
-interface User {
-  email: string;
-  password: string;
-}
 
 // Your web app's Firebase configuration
 var firebaseConfig = {

@@ -5,7 +5,17 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
     name: 'Login',
-    component: Login
+    component: Login,
+    children: [
+      {
+        path: '',
+        component: ()=> import (/* webpackChunkName: "LoginForm" */'../components/LoginForm.vue')
+      },
+      {
+        path: 'signup',
+        component: ()=> import (/* webpackChunkName: "SignUpForm" */'../components/SignUpForm.vue')
+      }
+    ]
   },
   {
     path: '/home',

@@ -1,17 +1,23 @@
 <template>
-  <form class="form">              
-        <div class="form__container">
+    <div class="container">
+        <h1 class="title">Login</h1>
+        <p class="subtitle">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+        <form class="form">              
             <div class="form__item">
-                <input class="form__input" type="text" placeholder="Email" name="uname" v-model="email"  required>
+                <input class="form__input" type="text" placeholder="Email" name="uemail" v-model="email"  required>
                 <input class="form__input" type="password" placeholder="Senha" v-model="password" name="psw" required>
             </div>
-        
-            <button class="form__btn" type="submit" @click.stop.prevent="logarEmailSenha()">Entrar</button>
-            <button class="form__btn" @click.stop.prevent="logarGoogle()">Entrar com Google</button>
-            <p>Não está cadastrado?<router-link to="/home">Cadastre-se aqui.</router-link></p>
-
+            
+            <div class="form__item">
+                <button class="form__btn" type="submit" @click.stop.prevent="logarEmailSenha()">Entrar</button>
+                <button class="form__btn form__google flex__center" @click.stop.prevent="logarGoogle()">
+                    <img class="icon" src="../assets/google_icon.svg"> 
+                    <span class="span">Entrar com Google</span>
+                </button>
+                <p>Não está cadastrado? <router-link to="/signup">Criar uma conta</router-link></p>
+            </div>
+        </form>
     </div>
-    </form>
 </template>
 
 <script lang="ts">
@@ -22,17 +28,6 @@ import firebase from "firebase/app";
 import "firebase/auth";
 export default{
     setup(){
-        var firebaseConfig = {
-            apiKey: "AIzaSyDn0QGzakyqFWhysIsSdq4mauk2AyAaoXU",
-            authDomain: "testelogin-7676b.firebaseapp.com",
-            projectId: "testelogin-7676b",
-            storageBucket: "testelogin-7676b.appspot.com",
-            messagingSenderId: "263468731148",
-            appId: "1:263468731148:web:a44bba2b01cf0061d49729"
-        };
-
-        const firebaseApp = firebase.apps && firebase.apps.length > 0 ? firebase.apps[0] : firebase.initializeApp(firebaseConfig)
-        
         
         const email = ref('')
         const password = ref('')
@@ -45,6 +40,12 @@ export default{
 
         const logarEmailSenha = ()=>{
              if (firebase.auth().currentUser) {
+                var user = firebase.auth().currentUser;
+                store.commit('setUser', {
+                    display_name: user?.displayName,
+                    email: user?.email,
+                    uid: user?.uid
+                });
                 router.push('/home');
             } else {
                 var emailValue = email.value;
@@ -57,7 +58,7 @@ export default{
                     alert('Please enter a password with at least 8 characters.');
                     return;
                 }
-                firebaseApp.auth().signInWithEmailAndPassword(emailValue, passwordValue)
+                firebase.auth().signInWithEmailAndPassword(emailValue, passwordValue)
                 .then((userCredential) => {
                     // Signed in
                     var user = userCredential.user;
@@ -86,12 +87,18 @@ export default{
 
         const logarGoogle = ()=>{
             if (firebase.auth().currentUser) {
+                var user = firebase.auth().currentUser;
+                    store.commit('setUser', {
+                        display_name: user?.displayName,
+                        email: user?.email,
+                        uid: user?.uid
+                });
                 router.push('/home');
             } else {
                 var provider = new firebase.auth.GoogleAuthProvider();
                 provider.addScope('profile');
                 provider.addScope('email');
-                firebaseApp.auth()
+                firebase.auth()
                 .signInWithPopup(provider)
                 .then((result) => {
                     var user = result.user;
@@ -114,11 +121,7 @@ export default{
             router.push('/home');
         }
         
-        return {email, password, firebaseApp, logarEmailSenha, logarGoogle}
-    },
-    
-    mounted() {
-        console.log(store.getters.getUser)
+        return {email, password, logarEmailSenha, logarGoogle}
     },
     name:'LoginForm',
 
@@ -126,22 +129,4 @@ export default{
 </script>
 
 <style lang="scss">
-.form{
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-
-    &__container{
-        width: 50%;
-        padding: 20% 0;
-        margin: auto;
-        max-height: 100%;  
-    }
-
-    &__input{
-        display: block;
-        margin: auto;
-    }
-}
 </style>
